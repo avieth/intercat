@@ -5,15 +5,20 @@
 --
 -- but who could possibly remember that syntax?
 
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Main where
 
+import Control.Concurrent (threadDelay)
+import Control.Exception (IOException, catch)
 import Data.ByteString.Lazy (hGet, hPut)
 import System.Environment (getArgs)
 import System.IO (Handle, IOMode (ReadMode), hIsEOF, stdout, withBinaryFile)
 
 cat_forever :: Int -> FilePath -> IO x
 cat_forever buffer_size fp = do
-  _ <- withBinaryFile fp ReadMode $ \h -> copy buffer_size h stdout
+  _ <- withBinaryFile fp ReadMode $ \h -> copy buffer_size h stdout `catch`
+    (\(io_err :: IOException) -> putStrLn (show io_err) >> threadDelay 1000000)
   cat_forever buffer_size fp
 
 copy :: Int -> Handle -> Handle -> IO ()
