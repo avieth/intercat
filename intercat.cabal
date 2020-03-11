@@ -28,6 +28,6 @@ executable infinicat
   build-depends:       base ^>=4.12.0.0,
                        bytestring
   hs-source-dirs:      infinicat/src
+  c-sources:           infinicat/cbits/open.c
   default-language:    Haskell2010
-  ghc-options:         -Wall
-
+  ghc-options:         -Wall -threaded
