@@ -23,7 +23,7 @@ import Foreign.C.String (withCString)
 import Foreign.Ptr
 import System.Environment (getArgs)
 import System.Exit (exitWith, ExitCode (ExitSuccess))
-import System.IO (Handle, stdout)
+import System.IO (Handle, BufferMode (..), hSetBinaryMode, hSetBuffering, stdout)
 
 -- AFAICT base offers neither
 -- - a blocking but interruptible open call
@@ -61,9 +61,14 @@ withBinaryFile fp k = mask $ \restore -> withCString fp $ \cstr -> do
 
 cat_forever :: Int -> FilePath -> IO ()
 cat_forever buffer_size fp = do
-  _ <- withBinaryFile fp $ \h -> copy buffer_size h stdout `catch`
-    (\(io_err :: IOException) -> putStrLn (show io_err) >> threadDelay 1000000)
-  cat_forever buffer_size fp
+  hSetBinaryMode stdout True
+  hSetBuffering stdout NoBuffering
+  loop
+  where
+  loop = do
+    _ <- withBinaryFile fp $ \h -> copy buffer_size h stdout `catch`
+      (\(io_err :: IOException) -> putStrLn (show io_err) >> threadDelay 1000000)
+    loop
 
 copy :: Int -> CInt -> Handle -> IO ()
 copy n src dst = do
@@ -78,7 +83,8 @@ main = do
   case args of
     [fp] -> cat_forever 4096 fp
     [fp,bs] -> case reads bs of
-      [(n, "")] -> cat_forever n fp
+      [(n, "")] -> do
+        cat_forever n fp
       _ -> usage
     _ -> usage
 
